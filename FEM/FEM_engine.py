@@ -10,7 +10,9 @@ def stiffness_matrix(springStiffness):
 
     return springStiffness*np.array([(1, -1), (-1, 1)])
 
-def DofMap(NodesInElement, nodesPerElement):
+#----------------------------------------------------------
+
+def DofMap(NodesInElement, NodesPerElement):
     """
     Return a vector containing the global dof numbers associated
     with the local dofs for the given element
@@ -19,11 +21,13 @@ def DofMap(NodesInElement, nodesPerElement):
     NodesPerElement: number of nodes per element
     """   
 
-    dof = np.zeros((nodesPerElement), dtype = np.int16)
+    dof = np.zeros((NodesPerElement), dtype = np.int16)
 
-    for i in range(nodesPerElement):
+    for i in range(NodesPerElement):
         dof[i] = NodesInElement[i]
     return dof
+
+#----------------------------------------------------------
 
 def assemble(K,k,dof):
     """
