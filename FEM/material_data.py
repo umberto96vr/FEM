@@ -1,4 +1,11 @@
-import numpy as np
+"""
+Created on Fri Mar 20 14:39:22 2020
+
+@author: Umberto Bettinardi
+         bettinardi96@gmail.com
+"""
+
+#import numpy as np
 
 class Material():
     

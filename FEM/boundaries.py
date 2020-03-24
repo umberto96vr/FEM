@@ -2,10 +2,11 @@
 """
 Created on Fri Mar 20 14:50:27 2020
 
-@author: kaise
+@author: Umberto Bettinardi
+         bettinardi96@gmail.com
 """
 
-import numpy as np
+#import numpy as np
 
 class BoundaryConditions():
     
