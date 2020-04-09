@@ -22,7 +22,7 @@ class HostNotFound(Exception):
 
 #----------------------------------------------------------
 
-def stiffness_matrix(e, mesh, material, integration):
+def stiffness_matrix(e, mesh, material, utilities):
     """
     Return the local stiffness matrix for a truss
     element with the given spring stiffness
@@ -32,7 +32,8 @@ def stiffness_matrix(e, mesh, material, integration):
     e:           element number
     mesh:        object containing mesh info
     material:    object containing material info
-    integration: object containing integration quadrature scheme info
+    utilities:   object containing integration quadrature scheme info
+                 and shape functions derivatives
     
     Returns
     ---------
@@ -40,26 +41,23 @@ def stiffness_matrix(e, mesh, material, integration):
     
     """
     
-    e_type = mesh.elementType(e)
+    elType = mesh.elementType(e)
     elMatSet  = mesh.elements[e,1]
-    evaluation, domain, rule, points = material.stiffnes_matrix_eval_info(elMatSet, e_type)
+    evaluation, domain, rule, points = material.stiffnes_matrix_eval_info(elMatSet, elType)
     
     if evaluation == 'closed form':    
-        if e_type == 'spring':
+        if elType == 'spring':
             
-            k_s = material.elastic_properties(elMatSet, e_type)
+            k_s = material.elastic_properties(elMatSet, elType)
     
             return k_s*np.array([(1, -1), (-1, 1)])
         
-        elif e_type == 'bar':
+        elif elType == 'bar':
             
-            A = material.geometric_properties(elMatSet, e_type)
-            E = material.elastic_properties(elMatSet, e_type)
-            
-            n_i = mesh.nodesInElement(e)[0]
-            n_j = mesh.nodesInElement(e)[1]
-            
-            L = mesh.coordinates[n_j] - mesh.coordinates[n_i]
+            A = material.geometric_properties(elMatSet, elType)
+            E = material.elastic_properties(elMatSet, elType)
+                                
+            L = mesh.elem_coordinates(e)[1] - mesh.elem_coordinates(e)[0]
             
             if L < 0:
                 
@@ -77,10 +75,37 @@ def stiffness_matrix(e, mesh, material, integration):
             
     elif evaluation == 'numerical integration':
         
-        (weights, int_points) = integration.quadrature_rule(rule, domain, points)
-        
+        from FEM.FEM_utilities import shape_functions_der
                 
-        raise FemError("stiffness matrix evaluation key '{}' hasn't been yet implemented!".format(evaluation))
+        if elType == 'bar':
+            
+            (weights, int_points) = utilities.quadrature_rule(rule, domain, points)
+            
+            A = material.geometric_properties(elMatSet, elType)
+            E = material.elastic_properties(elMatSet, elType)
+            
+            L = mesh.elem_coordinates(e)[1] - mesh.elem_coordinates(e)[0]
+            
+            k = np.zeros((2,2))
+            
+            if L < 0:
+                
+                print("Error: bar lenght is negative!")
+                sys.exit()
+            else:
+                
+                for i in range(len(int_points)):
+                    
+                    x = mesh.elem_coordinates(e)[0] + (L/2)*(1 + int_points[i])
+                    # x = int_points[i]
+                    
+                    B = shape_functions_der(mesh.elem_coordinates(e), x).reshape(1,2)                                      
+                    k += (L/2) * np.dot(B.T,B)*weights[i]*E*A
+                    
+                print(k)
+                return k   
+                
+        # raise FemError("stiffness matrix evaluation key '{}' hasn't been yet implemented!".format(evaluation))
         # print("Error: stiffness matrix evaluation key '{}' hasn't been yet implemented!".format(evaluation))
         # sys.exit()
 

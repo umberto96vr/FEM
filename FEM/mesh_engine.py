@@ -4,7 +4,7 @@ Created on Fri Mar 20 14:45:31 2020
 @author: Umberto Bettinardi
          bettinardi96@gmail.com
 """
-#import numpy as np
+import numpy as np
 # import sys
 from FEM.CustomErrors import FemError, MeshEngineError
 
@@ -97,6 +97,24 @@ class Mesh():
         
     #------------------------------------------------------------------------------------------
     
+    def elem_coordinates(self, e):
+        """
+        Returns the nodes element coordinates xi, xj, for a bar element
+
+        Parameters
+        ----------
+        e : element number.
+
+        Returns
+        -------
+        X : coordinates vector [xi xj].
+
+        """
+        
+        return self.coordinates[self.nodesInElement(e)]
+    
+    #------------------------------------------------------------------------------------------
+       
     def __str__(self):
         
         str_info = "------------------------------------------\n"
