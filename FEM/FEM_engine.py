@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.linalg import inv
-
+import time
 #----------------------------------------------------------
 
 def stiffness_matrix(k_s):
@@ -21,24 +21,34 @@ def stiffness_matrix(k_s):
 
 #----------------------------------------------------------
 
-def DofMap(NodesInElement, NodesPerElement):
+def DofMap(e, mesh):
     """
     Return a vector containing the global dof numbers associated
     with the local dofs for the given element
     
     Parameters
     ----------
-    NodesInElement : nodes in the specified element
-    NodesPerElement: number of nodes per element
+    e : element number
+    mesh: instance of Mesh() class containing mesh infos
     
     Returns
     ---------
     dof : dof map for the given element
     """   
 
-    dof = np.zeros((NodesPerElement), dtype = np.int16)
+    NodesInElement  = mesh.nodesInElement(e)
+    NodesPerElement = mesh.NodesElement
+    
+    
+
+    dof = np.zeros((NodesPerElement), dtype = np.uint8)
 
     for i in range(NodesPerElement):
+        
+        if NodesInElement[i] > 255:
+            
+            print('Overflow error!')
+        
         dof[i] = NodesInElement[i]
     return dof
 
@@ -77,6 +87,7 @@ def assemble(K,k,dof):
 
 #----------------------------------------------------------
 
+
 def solve(K,F,ConstrainedDofs):
     """
     Solve the structural problem 
@@ -97,15 +108,20 @@ def solve(K,F,ConstrainedDofs):
     R             : Global reactions vector
 
     """
-    K_r = K.copy()
     
-    for e in ConstrainedDofs:
+    
+    if len(F) == len(K[:,0]):
+        K_r = K.copy()
         
-        K_r[:,e] = 0
-        K_r[e,:] = 0
-        K_r[e,e] = 1
-    U = np.matmul(inv(K_r),F)
-    R = np.matmul(K,U)
-    
-    return U, R
-    
+        for e in ConstrainedDofs:
+            
+            K_r[:,e] = 0
+            K_r[e,:] = 0
+            K_r[e,e] = 1
+        U = np.matmul(inv(K_r),F)
+        R = np.matmul(K,U)
+        
+        return U, R
+    else:
+        print('Error: K is a {}x{} matrix while \nF is {}x1! Shape mismatch!'.format(len(K[:,0]),len(K[:,0]),len(F)))
+        return np.zeros((len(K[:,0]),1)), np.zeros((len(K[:,0]),1))

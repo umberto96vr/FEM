@@ -20,7 +20,7 @@ class Mesh():
         
         Attributes
         ----------
-        ElementsNumbert : nodes in the specified element
+        ElementsNumber : number of elements
         Nodes: number of nodes per element
         NodesPerElement
         dofsPerNode
@@ -34,9 +34,17 @@ class Mesh():
         self.Nodes        = Nodes
         self.NodesElement = NodesPerElement
         self.dofsNode     = dofsPerNode
-
         self.elements     = connect_table 
+      
+    
+    def dofs(self):
+        """
+        Return the total number of degrees of freedom
+
+        """
         
+        return self.Nodes*self.dofsNode
+    
     def nodesInElement(self,e):
         """
         Parameters
@@ -51,3 +59,20 @@ class Mesh():
         """
         
         return self.elements[e][2:]
+    
+    def __str__(self):
+        
+        str_info = "------------------------------------------\n"
+        str_info += "             MESH INFO\n"
+        str_info += "------------------------------------------\n"
+        str_info += "Number of elements:          {}\n".format(self.Elements)
+        str_info += "Number of nodes:             {}\n".format(self.Nodes)
+        str_info += "Number of nodes per elment:  {}\n".format(self.NodesElement)
+        str_info += "Number of dofs per node:     {}\n\n".format(self.dofsNode)
+        str_info += "Connectivity table:\n\n"
+        str_info += "| Material |Element type  |   Node i    |Node j\n"
+        for i in range(self.Elements):
+            
+            str_info += "|   {}      |        {}     |     {}       |     {}\n".format(
+                self.elements[i,0],self.elements[i,1],self.elements[i,2],self.elements[i,3])
+        return str_info

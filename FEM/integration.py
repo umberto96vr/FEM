@@ -180,29 +180,7 @@ def gauss_leg_quadr2d(n, a, b, c, d, func):
         c4 = (d+c)/2
             
         #Jacobian
-        J = c1*c3
-    
-        # # Quadrature scheme
-        # quad_scheme_GL = {
-        #                 2: np.array([
-        #                             [-1/np.sqrt(3),
-        #                               1/np.sqrt(3)],
-        #                             [1,1]]),
-        #                 3: np.array([
-        #                              [-np.sqrt(3/5), 0, np.sqrt(3/5)],
-        #                              [5/9, 8/9, 5/9]]), 
-        #                 4: np.array([
-        #                             [-np.sqrt((15 + 2*np.sqrt(30))/35), 
-        #                              -np.sqrt((15 - 2*np.sqrt(30))/35), 
-        #                               np.sqrt((15 - 2*np.sqrt(30))/35), 
-        #                               np.sqrt((15 + 2*np.sqrt(30))/35)],
-        #                              [(18 - np.sqrt(30))/36,
-        #                               (18 + np.sqrt(30))/36,
-        #                               (18 + np.sqrt(30))/36,
-        #                               (18 - np.sqrt(30))/36]])}
-        
-    
-    
+        J = c1*c3   
     
         # Quadrature scheme
         quad_scheme_GL = {
