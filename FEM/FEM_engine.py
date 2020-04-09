@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Apr  9 19:51:19 2020
+
+@author: Umberto Bettinardi
+         bettinardi96@gmail.com
+"""
+
+
 import numpy as np
 from numpy.linalg import inv
 from FEM.CustomErrors import FemError
@@ -13,16 +22,17 @@ class HostNotFound(Exception):
 
 #----------------------------------------------------------
 
-def stiffness_matrix(e, mesh, material):
+def stiffness_matrix(e, mesh, material, integration):
     """
     Return the local stiffness matrix for a truss
     element with the given spring stiffness
     
     Parameters
     ----------
-    e:          element number
-    mesh:       object containing mesh info
-    material:   object containing material info
+    e:           element number
+    mesh:        object containing mesh info
+    material:    object containing material info
+    integration: object containing integration quadrature scheme info
     
     Returns
     ---------
@@ -66,9 +76,13 @@ def stiffness_matrix(e, mesh, material):
             sys.exit()
             
     elif evaluation == 'numerical integration':
+        
+        (weights, int_points) = integration.quadrature_rule(rule, domain, points)
+        
+                
         raise FemError("stiffness matrix evaluation key '{}' hasn't been yet implemented!".format(evaluation))
         # print("Error: stiffness matrix evaluation key '{}' hasn't been yet implemented!".format(evaluation))
-        sys.exit()
+        # sys.exit()
 
 #----------------------------------------------------------
 
