@@ -5,6 +5,7 @@ Created on Fri Mar 20 14:45:31 2020
          bettinardi96@gmail.com
 """
 #import numpy as np
+import sys
 
 #-----------------------------------------------------------------
 
@@ -12,7 +13,7 @@ class Mesh():
     """ Contains information about the discretization"""
 
     def __init__(self,ElementsNumber = None, Nodes = None, NodesPerElement = None,
-                 dofsPerNode = None, connect_table = None):
+                 dofsPerNode = None, connect_table = None, coordinates = None):
 
         """
         Return a vector containing the global dof numbers associated
@@ -35,6 +36,7 @@ class Mesh():
         self.NodesElement = NodesPerElement
         self.dofsNode     = dofsPerNode
         self.elements     = connect_table 
+        self.coordinates  = coordinates
       
     
     def dofs(self):
@@ -59,6 +61,27 @@ class Mesh():
         """
         
         return self.elements[e][2:]
+    
+    def elementType(self,e):
+        """
+        Returns the element type for element e
+
+        Parameters
+        ----------
+        e : element number
+
+        Returns
+        -------
+        element type
+
+        """
+        if self.elements[e,0] == 1:
+            return "1D Spring"
+        elif self.elements[e,0] == 2:
+            return "1D Bar"
+        else:
+            print("Error: element number {} not yet avaiable!".format(self.elements[e,0]))
+            sys.exit()
     
     def __str__(self):
         

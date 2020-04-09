@@ -1,23 +1,55 @@
 import numpy as np
 from numpy.linalg import inv
-import time
+import sys
+# import time
 #----------------------------------------------------------
 
-def stiffness_matrix(k_s):
+def stiffness_matrix(e, mesh, material):
     """
     Return the local stiffness matrix for a truss
     element with the given spring stiffness
     
     Parameters
     ----------
-    k_s: Spring stiffness
+    e:          element number
+    mesh:       object containing mesh info
+    material:   object containing material info
     
     Returns
     ---------
     K_spring : Spring local stiffness matrix
+    
     """
+    
+    e_type = mesh.elementType(e)
+    elMat  = mesh.elements[e,1]
+    
+    if e_type == '1D Spring':
+        
+        k_s = material.parameters(elMat, e_type)
 
-    return k_s*np.array([(1, -1), (-1, 1)])
+        return k_s*np.array([(1, -1), (-1, 1)])
+    elif e_type == '1D Bar':
+        
+        EA = material.parameters(elMat, e_type)
+        
+        n_i = mesh.nodesInElement(e)[0]
+        n_j = mesh.nodesInElement(e)[1]
+        
+        L = mesh.coordinates[n_j] - mesh.coordinates[n_i]
+        
+        if L < 0:
+            print("Error: bar lenght is negative!")
+            sys.exit()
+        else:
+            return (EA/L)*np.array([(1, -1), (-1, 1)])
+            
+        
+        
+        
+    else:
+        print("Error: element number {} not yet avaiable!".format(mesh.elements[e,0]))
+        sys.exit()
 
 #----------------------------------------------------------
 
@@ -52,6 +84,8 @@ def DofMap(e, mesh):
         dof[i] = NodesInElement[i]
     return dof
 
+
+
 #----------------------------------------------------------
 
 def assemble(K,k,dof):
@@ -69,7 +103,6 @@ def assemble(K,k,dof):
     Returns
     -------
     K  : Assembled global stiffness matrix
-
     """
 
     elementDofs = dof.size
