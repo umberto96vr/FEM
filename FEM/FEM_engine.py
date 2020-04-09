@@ -1,7 +1,16 @@
 import numpy as np
 from numpy.linalg import inv
+from FEM.CustomErrors import FemError
 import sys
 # import time
+
+
+class HostNotFound(Exception):
+    def __init__( self, host ):
+        self.host = host
+        Exception.__init__(self, 'Host Not Found exception: missing %s' % host)
+
+
 #----------------------------------------------------------
 
 def stiffness_matrix(e, mesh, material):
@@ -22,45 +31,55 @@ def stiffness_matrix(e, mesh, material):
     """
     
     e_type = mesh.elementType(e)
-    elMat  = mesh.elements[e,1]
+    elMatSet  = mesh.elements[e,1]
+    evaluation, domain, rule, points = material.stiffnes_matrix_eval_info(elMatSet, e_type)
     
-    if e_type == '1D Spring':
-        
-        k_s = material.parameters(elMat, e_type)
-
-        return k_s*np.array([(1, -1), (-1, 1)])
-    elif e_type == '1D Bar':
-        
-        EA = material.parameters(elMat, e_type)
-        
-        n_i = mesh.nodesInElement(e)[0]
-        n_j = mesh.nodesInElement(e)[1]
-        
-        L = mesh.coordinates[n_j] - mesh.coordinates[n_i]
-        
-        if L < 0:
-            print("Error: bar lenght is negative!")
-            sys.exit()
-        else:
-            return (EA/L)*np.array([(1, -1), (-1, 1)])
+    if evaluation == 'closed form':    
+        if e_type == 'spring':
             
+            k_s = material.elastic_properties(elMatSet, e_type)
+    
+            return k_s*np.array([(1, -1), (-1, 1)])
         
-        
-        
-    else:
-        print("Error: element number {} not yet avaiable!".format(mesh.elements[e,0]))
+        elif e_type == 'bar':
+            
+            A = material.geometric_properties(elMatSet, e_type)
+            E = material.elastic_properties(elMatSet, e_type)
+            
+            n_i = mesh.nodesInElement(e)[0]
+            n_j = mesh.nodesInElement(e)[1]
+            
+            L = mesh.coordinates[n_j] - mesh.coordinates[n_i]
+            
+            if L < 0:
+                
+                print("Error: bar lenght is negative!")
+                sys.exit()
+            else:
+                return ((E*A)/L)*np.array([(1, -1), (-1, 1)])
+                
+            
+            
+            
+        else:
+            print("Error: element number {} not yet avaiable!".format(mesh.elements[e,0]))
+            sys.exit()
+            
+    elif evaluation == 'numerical integration':
+        raise FemError("stiffness matrix evaluation key '{}' hasn't been yet implemented!".format(evaluation))
+        # print("Error: stiffness matrix evaluation key '{}' hasn't been yet implemented!".format(evaluation))
         sys.exit()
 
 #----------------------------------------------------------
 
 def DofMap(e, mesh):
     """
-    Return a vector containing the global dof numbers associated
-    with the local dofs for the given element
+    Return a vector containing the global dof numbers associated\n
+    with the local dofs for the given element\n
     
     Parameters
     ----------
-    e : element number
+    e : element number\n
     mesh: instance of Mesh() class containing mesh infos
     
     Returns
@@ -96,9 +115,9 @@ def assemble(K,k,dof):
     
     Parameters
     ----------
-    K  : Global stiffness matrix
-    k  : local stiffness matrix
-    dof: dof map for the given element
+    K  : Global stiffness matrix \n
+    k  : local stiffness matrix  \n
+    dof: dof map for the given element  \n
         
     Returns
     -------
@@ -106,39 +125,33 @@ def assemble(K,k,dof):
     """
 
     elementDofs = dof.size
-    #print("dof vector dimension:", elementDofs)
 
     for i in range(elementDofs):
         ii = dof[i]
         for j in range(elementDofs):
             jj = dof[j]
-            #print("local k[{},{}] goes into global K[{},{}]".format(i,j,ii,jj))
-            #print("")
             K[ii,jj] += k[i,j]
 
     return K
 
-#----------------------------------------------------------
 
-
+#------------------------------------------------------------------------------------------
+    
 def solve(K,F,ConstrainedDofs):
     """
-    Solve the structural problem 
+    Solve the structural problem  \n
     F = K*U
     
     Parameters
     ----------
-    K             : Global Stiffness
-                    Matrix.
-    F             : Load Vector.
-    CostraineDofs : Vector containing
-                    the constrained DoFs
-                    numbers.
+    K             : Global Stiffness Matrix. \n 
+    F             : Load Vector. \n
+    CostraineDofs : Vector containing the constrained DoFs numbers. \n
 
     Returns
     -------
-    U             : Global DoFs vector
-    R             : Global reactions vector
+    U             : Global DoFs vector \n
+    R             : Global reactions vector \n
 
     """
     

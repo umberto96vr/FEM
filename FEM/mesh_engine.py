@@ -5,31 +5,30 @@ Created on Fri Mar 20 14:45:31 2020
          bettinardi96@gmail.com
 """
 #import numpy as np
-import sys
+# import sys
+from FEM.CustomErrors import FemError, MeshEngineError
 
-#-----------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
 
 class Mesh():
-    """ Contains information about the discretization"""
+    """ Contains information about the discretization\n
+        Attributes: \n
+        ----------
+        ElementsNumber : number of elements. \n
+        Nodes: number of nodes per element. \n
+        NodesPerElement. \n
+        dofsPerNode. \n
+        connect_table: \n
+        \t\t\t         requires an array of dimension n x 4 where n \n 
+        \t\t\t         is the number of elements. \n
+        \t\t\t         Each row has the following structure: \n
+        \t\t\t         element type | material | 1st node in global ref | 2nd node in global ref
+        """
+        
+    #------------------------------------------------------------------------------------------
 
     def __init__(self,ElementsNumber = None, Nodes = None, NodesPerElement = None,
                  dofsPerNode = None, connect_table = None, coordinates = None):
-
-        """
-        Return a vector containing the global dof numbers associated
-        with the local dofs for the given element
-        
-        Attributes
-        ----------
-        ElementsNumber : number of elements
-        Nodes: number of nodes per element
-        NodesPerElement
-        dofsPerNode
-        conncet_table: requires an array of dimension n x 4 where n 
-                       is the number of elements. 
-                       Each row has the following structure: 
-                       element type | material | 1st node in global ref | 2nd node in global ref
-        """
         
         self.Elements     = ElementsNumber
         self.Nodes        = Nodes
@@ -38,6 +37,8 @@ class Mesh():
         self.elements     = connect_table 
         self.coordinates  = coordinates
       
+        
+    #------------------------------------------------------------------------------------------
     
     def dofs(self):
         """
@@ -46,6 +47,8 @@ class Mesh():
         """
         
         return self.Nodes*self.dofsNode
+        
+    #------------------------------------------------------------------------------------------
     
     def nodesInElement(self,e):
         """
@@ -61,6 +64,8 @@ class Mesh():
         """
         
         return self.elements[e][2:]
+        
+    #------------------------------------------------------------------------------------------
     
     def elementType(self,e):
         """
@@ -68,7 +73,12 @@ class Mesh():
 
         Parameters
         ----------
-        e : element number
+        e : element number\n
+        
+        Implemented elements:\n\t
+            
+            1   spring element\n\t
+            2   bar element\n
 
         Returns
         -------
@@ -76,12 +86,16 @@ class Mesh():
 
         """
         if self.elements[e,0] == 1:
-            return "1D Spring"
+            return "spring"
+        
         elif self.elements[e,0] == 2:
-            return "1D Bar"
+            return "bar"
         else:
-            print("Error: element number {} not yet avaiable!".format(self.elements[e,0]))
-            sys.exit()
+            raise MeshEngineError("Error: element number {} not yet avaiable!".format(self.elements[e,0]))
+            # print("Error: element number {} not yet avaiable!".format(self.elements[e,0]))
+            # sys.exit()
+        
+    #------------------------------------------------------------------------------------------
     
     def __str__(self):
         
