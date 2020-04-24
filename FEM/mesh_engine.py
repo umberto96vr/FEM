@@ -4,38 +4,43 @@ Created on Fri Mar 20 14:45:31 2020
 @author: Umberto Bettinardi
          bettinardi96@gmail.com
 """
-import numpy as np
 # import sys
+
+import numpy as np
+
 from FEM.CustomErrors import FemError, MeshEngineError
 
 #---------------------------------------------------------------------------------------------
 
 class Mesh():
     """ Contains information about the discretization\n
-        Attributes: \n
+        Parameters: 
         ----------
         ElementsNumber : number of elements. \n
-        Nodes: number of nodes per element. \n
-        NodesPerElement. \n
-        dofsPerNode. \n
+        Nodes : number of nodes. \n
+        NodesPerElement : number of nodes per element. \n
+        dofsPerNode : number of degrees of freedom per node \n
         connect_table: \n
-        \t\t\t         requires an array of dimension n x 4 where n \n 
-        \t\t\t         is the number of elements. \n
+        \t\t\t         requires an array of dimension n x 4 where\n   
+        \t\t\t         n is the number of elements. \n
         \t\t\t         Each row has the following structure: \n
-        \t\t\t         element type | material | 1st node in global ref | 2nd node in global ref
+        \t\t\t         element type | material | 1st node in global ref | 2nd node in global ref\n
+        coordinates : element nodes coordinates.\n
+        d : dimension of the problem.
         """
         
     #------------------------------------------------------------------------------------------
 
-    def __init__(self,ElementsNumber = None, Nodes = None, NodesPerElement = None,
-                 dofsPerNode = None, connect_table = None, coordinates = None):
+    def __init__(self):
         
-        self.Elements     = ElementsNumber
-        self.Nodes        = Nodes
-        self.NodesElement = NodesPerElement
-        self.dofsNode     = dofsPerNode
-        self.elements     = connect_table 
-        self.coordinates  = coordinates
+        self.Elements     = None 
+        self.Nodes        = None
+        self.NodesElement = None
+        self.dofsNode     = None
+        self.elements     = None 
+        self.coordinates  = None
+        self.d            = None
+        self.strain_sizes      = [1, 3, 6]
       
         
     #------------------------------------------------------------------------------------------
@@ -59,11 +64,11 @@ class Mesh():
         Returns
         -------
         Returns the global dofs mapping
-        for the specified element.
+        for the specified element e.
 
         """
         
-        return self.elements[e][2:]
+        return self.elements[e,2:]
         
     #------------------------------------------------------------------------------------------
     
@@ -77,12 +82,16 @@ class Mesh():
         
         Implemented elements:\n\t
             
-            1   spring element\n\t
-            2   bar element\n
+            1   spring element \n\t
+            2   bar element 
 
         Returns
         -------
-        element type
+        element type:\n\t
+            
+            1 ----> 'spring'\n
+            2 ----> 'bar'
+        
 
         """
         if self.elements[e,0] == 1:
@@ -107,7 +116,7 @@ class Mesh():
 
         Returns
         -------
-        X : coordinates vector [xi xj].
+        X : coordinates vector.
 
         """
         
