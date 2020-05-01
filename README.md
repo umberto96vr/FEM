@@ -1,4 +1,4 @@
-# FEM
+# SpritzFEM
 ## FEM program for linear-static analysis
 
 This project is part of the course of COMPUTATIONAL MECHANICS OF MATERIAL for the MSc in Mechanical Engineering.
