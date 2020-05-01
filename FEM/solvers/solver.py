@@ -12,8 +12,29 @@ class SolverError(Exception):
 
 
 def run(mesh, BCs, material, parameters):
+    """
+    Solve the algebric equation K U = f
+
+    Parameters
+    ----------
+    mesh : object containing mesh informations.\n
+    BCs : object containing boundary conditions informations.\n
+    material : object containing material informations.\n
+    parameters : dictionary containing solver settings.\n
+
+    Returns
+    -------
+    U : Displacements vector.\n
+    R : Reaction forces vector.\n
+    K : Stiffness matrix.\n
+
+    """
     
-    possible_solvers = ['linear', 'nonlinear']
+    # Defining number of dofs
+    mesh.dofs = mesh.Nodes*mesh.dofsNode
+    
+    # Defining possible solver options
+    possible_solvers = ['linear','linear_disp', 'nonlinear']
 
     solverType = parameters["solver"]["type"]
     
@@ -22,11 +43,9 @@ def run(mesh, BCs, material, parameters):
         exec("from FEM.solvers."+solverType+" import "+solverType)
         
         (U, R, K) = eval(solverType+"(mesh, BCs, material, parameters)")    
-        
-        # ...you might want to have a safer approach to eval:
-        # https://www.geeksforgeeks.org/eval-in-python/
-        
-        return (U, R, K)
+                
+        return U, R, K
+    
     else:
         raise SolverError("Invalid solver type!")
 
