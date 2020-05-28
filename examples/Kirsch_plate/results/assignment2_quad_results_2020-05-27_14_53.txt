@@ -1,0 +1,11 @@
+assignment2_quad.geo - results
+
+@author: Umberto Bettinardi
+         bettinardi96@gmail.com
+
+Analysis date: 2020-05-27 14:56
+
+	h-size	  Elements	    Dofs		err_H0	 rel_err
+   0.220	    2405	    4994	1.687797	      inf
+
+Convergence rate:	0.4758602285943281
