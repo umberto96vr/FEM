@@ -11,7 +11,7 @@ class SolverError(Exception):
         Exception.__init__(self, text)
 
 
-def run(mesh, BCs, material, parameters):
+def run(mesh, BCs, MaterialSets, Procedures):
     """
     Solve the algebric equation K U = f
 
@@ -29,20 +29,23 @@ def run(mesh, BCs, material, parameters):
     K : Stiffness matrix.\n
 
     """
-    
-    # Defining number of dofs
-    mesh.dofs = mesh.Nodes*mesh.dofsNode
-    
+        
     # Defining possible solver options
     possible_solvers = ['linear','linear_disp', 'nonlinear']
 
-    solverType = parameters["solver"]["type"]
+    solverType = Procedures["solver"]["type"]
     
     if solverType in possible_solvers:
     
         exec("from FEM.solvers."+solverType+" import "+solverType)
         
-        (U, R, K) = eval(solverType+"(mesh, BCs, material, parameters)")    
+        if solverType == 'nonlinear':
+            
+            (U, R, K) = eval(solverType+"(mesh, BCs, MaterialSets, Procedures)")
+        
+        else:
+        
+            (U, R, K) = eval(solverType+"(mesh, BCs, MaterialSets)")    
                 
         return U, R, K
     

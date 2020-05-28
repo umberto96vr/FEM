@@ -12,53 +12,63 @@ import time
 
 import FEM.FEM_engine as FEM_engine
 
+class SolverError(Exception):
+    def __init__(self, text):
+        self.text = text
+        Exception.__init__(self, text)
 
-def linear(mesh, BCs, MaterialSets, parameters):
+
+def linear(mesh, BCs, MaterialSets):
     """
     Linear solver.
 
     """
+            
+    # Initializing arrays
+    systemDofs = mesh.dofsNode*len(mesh.points)
+    K = np.zeros(shape = (systemDofs,systemDofs), dtype = np.float32)
+    F = np.zeros(shape = (systemDofs,1), dtype = np.float32)
     
-    K = np.zeros(shape = (mesh.dofs,mesh.dofs))
-    F = np.zeros(shape = (mesh.dofs,1))
-    
-    print("Assemblying global stiffness matrix...\n")
+    print("Assemblying global stiffness matrix...")
     
     start_a = time.time()
     
-    for e in range(mesh.Elements):
+    for e in range(len(mesh.elements)):
     
-        k = FEM_engine.stiffness_matrix(e, mesh, MaterialSets, parameters)
+        k = FEM_engine.stiffness_matrix(e, mesh, MaterialSets)
                 
         # Get global dof associate with element e.
         dof = FEM_engine.DofMap(e,mesh)
         
         # Assemble the e-th local matrix into the global one.
-        print("dof : {}\n".format(dof))
         K = FEM_engine.assemble(K,k,dof)
     
+        
     end_a = time.time()
     
-    print("Global stiffness matrix assembled in {}s\n".format(end_a - start_a))
+    print("Global stiffness matrix assembled in {}s".format(end_a - start_a))
     
-    (Kr, F) = BCs.apply(K, F, mesh)
+    Kr = K.copy()
     
-    print("Solving F = Ku...\n")
-
+    (Kr, F) = BCs.apply(Kr, F, mesh)
+    print("Solving F = Ku...")
+    
     start_s = time.time()
     
     LU  = linalg.lu_factor(Kr)
+    del Kr
     U   = linalg.lu_solve(LU,F)
+    del LU
     
     end_s = time.time()
-    print("LU solver: {}s\n".format(end_s - start_s))
+    print("\nLU solver: {}s".format(end_s - start_s))
 
     R = np.matmul(K,U)
     
     end_s = time.time()
     
-    print("Linear system solved in {}s\n".format(end_s - start_s))
+    print("Linear system solved in {}s".format(end_s - start_s))
     
-    return U, R, K
+    return U,R,K
         
     
