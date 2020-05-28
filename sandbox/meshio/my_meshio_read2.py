@@ -8,44 +8,113 @@ Created on Thu Apr 30 18:30:32 2020
 """
 
 # This reimplements gmsh/demos/boolean/boolean.geo in Python.
-import meshio
 import os
+import sys
+import time
+sys.path.append("../../source")
+
 import numpy as np
-import matplotlib.pyplot as plt
 
+from FEM import mesh_engine 
+from FEM import BC_engine
+import FEM.solvers.solver as solver
+import FEM.post.postprocess as post
+import meshio
+
+np.set_printoptions(precision=4)
+
+# Parameters
+print("\n--> Pre-processing...\n")
+print("Initializing model parameters...")
+
+Procedures = {"solver": {"type": "linear"}, 
+              
+              "postprocessing":{"undeformed mesh": {"output": "screen"},
+                                "deformed mesh": {"magnification factor": 50, "output": "screen"},
+                                "axial stress": {"output": "screen"}
+                                }
+              }
+
+#---------------------------------------------------------------
+
+# Material info
+print("Defining material sets...")
+MaterialSets = {
+
+    '112': {'element': 'triangle',
+          'plane deformation'    : 'plane stress',
+          'material behavior'    : 'isotropic linear elastic',
+          'elastic properties'   : {"Young modulus" : 3*1e7, "poisson ratio" : 0.25},
+          'geometric properties' : {'thikness': 0.5},
+          'stiffness matrix'     : {'evaluation': 'closed form'}
+          
+          },
+    '2': {'element': 'triangle',
+          'plane deformation'    : 'plane stress',
+          'material behavior'    : 'isotropic linear elastic',
+          'elastic properties'   : {"Young modulus" : 2.06*1e6, "poisson ratio" : 0.3},
+          'geometric properties' : {'thikness': 0.5},
+          'stiffness matrix'     : {'evaluation': 'closed form'}
+          
+          }
+    }
+
+#---------------------------------------------------------------
+print("Meshing...")
 mesh_file = "bimaterial2"
-
 os.system("gmsh -2 " + mesh_file + ".geo" + " -o " + mesh_file + ".msh")
+meshIO = meshio.read(mesh_file + ".msh")
 
-mesh = meshio.read(mesh_file + ".msh")
+mesh = mesh_engine.Mesh()
+mesh.elements = meshIO.cells_dict["triangle"]
+mesh.elementMaterialTag = meshIO.cell_data_dict['gmsh:physical']['triangle']
+mesh.elementType = np.array([["triangle"] for i in range(len(mesh.elements))])
 
-triangle_cells = mesh.cells_dict["triangle"]
-points = mesh.points
-triangle_data = mesh.cell_data_dict["gmsh:physical"]["triangle"]
+mesh.points = meshIO.points
 
-first_kind = len(triangle_data[triangle_data == 112])
+mesh.NodesElement = 3
+mesh.dofsNode     = 2
+mesh.d            = 2
+mesh.Nodes        = len(mesh.points)
 
-plt.figure(1)
-for i in triangle_cells[:first_kind+1]:
-    X = points[[i],0][0]
-    Y = points[[i],1][0]
-    X = np.append(X, X[0])
-    Y = np.append(Y, Y[0])
-    plt.plot(X,Y, '-r', linewidth = 0.5)
-for i in triangle_cells[first_kind:]:
-    X = points[[i],0][0]
-    Y = points[[i],1][0]
-    X = np.append(X, X[0])
-    Y = np.append(Y, Y[0])
-    plt.plot(X,Y, '-b', linewidth = 0.5)
-    
-size = triangle_cells.shape[0]
 
-dirichlet = mesh.cell_sets_dict["Dirichlet"]["line"]
+# Load info
+print("Applying BCs...\n")
 
-elem = np.zeros((size, 5), dtype = int)
+BCs = BC_engine.BoundaryConditions()
 
-for i in range(size):
-    elem[i,:2] = np.array([triangle_data[i],6])
-    elem[i,2:] = triangle_cells[i,:]
+P = 1000
 
+Dirichlet = 1
+Neuman = 0
+BCs.data = np.array([[0, Dirichlet, 0,  0],
+                     [0, Dirichlet, 1,  0],
+                     [1, Dirichlet, 1,  0],
+                     [3, Dirichlet, 0,  0],
+                     [3, Dirichlet, 1,  0],
+                     [2, Neuman   , 1, -P]])#,
+                     #[4, Neuman   , 1, q1],
+                     #[0, Neuman   , 1, q1]])
+
+#---------------------------------------------------------------
+
+print("--> Solving...\n")
+
+# Global solver time assesment
+start = time.time()
+
+U, R, K = solver.run(mesh, BCs, MaterialSets, Procedures)
+
+end = time.time()
+
+
+print("Total time: {}s".format(end-start))
+
+print("\n-- Post-processing...\n")
+
+U_print = U.copy()
+
+print("   . solution U:\n{}\n".format(U_print.reshape(mesh.Nodes,2)))
+print("   . reaction forces R:\n{}\n".format(R.reshape(mesh.Nodes,2)))
+
+meshio.write(mesh_file+".vtk", mesh)
